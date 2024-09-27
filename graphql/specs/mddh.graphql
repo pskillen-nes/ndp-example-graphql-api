@@ -1,0 +1,20 @@
+type MedicalDevice {
+  deviceSerialNum: String
+  productDescription: String
+  lotOrBatchNum: String
+  mddClass: String
+  procedure: Procedure
+  operation: Operation
+}
+
+type Procedure {
+  id: ID!
+  code: String
+  description: String
+}
+
+type Operation {
+  id: ID!
+  identifier: String
+  dateTime: String
+}

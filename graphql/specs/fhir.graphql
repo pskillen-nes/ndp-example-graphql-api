@@ -1,0 +1,177 @@
+type FhirImmunization {
+    id: ID!
+    identifier: [FhirIdentifier]
+    status: String
+    statusReason: FhirCodeableConcept
+    vaccineCode: FhirCodeableConcept
+    patient: FhirReference
+    occurrenceDateTime: String
+    recorded: String
+    primarySource: Boolean
+    location: FhirReference
+    manufacturer: FhirReference
+    lotNumber: String
+    site: FhirCodeableConcept
+    route: FhirCodeableConcept
+    performer: [FhirPerformer]
+    reasonCode: [FhirCodeableConcept]
+    protocolApplied: [FhirProtocolApplied]
+    contained: [ContainedResource]
+    extension: [FhirExtension]
+}
+
+type FhirIdentifier {
+    system: String
+    value: String
+}
+
+type FhirCodeableConcept {
+    text: String
+    coding: [FhirCoding]
+}
+
+type FhirCoding {
+    system: String
+    code: String
+    display: String
+}
+
+type FhirReference {
+    reference: String
+}
+
+type FhirPerformer {
+    actor: FhirReference
+}
+
+type FhirProtocolApplied {
+    targetDisease: [FhirCodeableConcept]
+    doseNumberPositiveInt: Int
+    seriesDosePositiveInt: Int
+}
+
+union ContainedResource = FhirLocation | FhirOrganization | FhirPractitioner
+
+type FhirLocation {
+    id: ID!
+    identifier: [FhirIdentifier]
+    name: String
+    type: [FhirCodeableConcept]
+    address: [FhirAddress]
+    managingOrganization: FhirReference
+}
+
+type FhirOrganization {
+    id: ID!
+    identifier: [FhirIdentifier]
+    name: String
+    type: [FhirCodeableConcept]
+    address: [FhirAddress]
+    partOf: FhirReference
+}
+
+type FhirPractitioner {
+    id: ID!
+    identifier: [FhirIdentifier]
+    name: [FhirHumanName]
+    telecom: [FhirContactPoint]
+}
+
+type FhirHumanName {
+    family: String
+    given: [String]
+    prefix: [String]
+    suffix: [String]
+}
+
+type FhirAddress {
+    use: String
+    text: String
+    line: [String]
+    city: String
+    postalCode: String
+    country: String
+}
+
+type FhirExtension {
+    url: String
+    valueString: String
+}
+
+type FhirPatient {
+    id: ID!
+    identifier: [FhirIdentifier]
+    name: FhirHumanName
+    birthDate: String
+    gender: String
+    managingOrganization: FhirOrganization
+    address: [FhirAddress]
+    deceased: Boolean
+    generalPractitioner: FhirOrganization
+}
+
+
+type FhirDocumentReference {
+    id: ID!
+    identifier: [FhirIdentifier]
+    status: String
+    docStatus: String
+    type: FhirCodeableConcept
+    category: [FhirCodeableConcept]
+    subject: FhirReference
+    context: [FhirReference]
+    date: String
+    author: FhirPractitioner
+    content: [FhirDocumentContent]
+}
+
+type FhirDocumentContent {
+    attachment: FhirAttachment
+    profile: [FhirProfile]
+}
+
+type FhirProfile {
+    valueCoding: FhirCoding
+}
+
+type FhirAttachment {
+    url: String
+    title: String
+}
+
+type FhirClinicalImpression {
+    id: ID!
+    patientIdentifier: String
+    encounterId: String
+    notes: String
+}
+
+type FhirParticipant {
+    actor: FhirReference
+}
+
+type FhirEncounter {
+    id: ID!
+    identifier: [FhirIdentifier]
+    status: String
+    type: [FhirCodeableConcept]
+    subject: FhirReference
+    serviceProvider: FhirOrganization
+    participant: [FhirParticipant]
+    actualPeriod: FhirPeriod
+    reason: [FhirEncounterReason]
+}
+
+type FhirEncounterReason {
+    concept: FhirCodeableConcept
+}
+
+type FhirPeriod {
+    start: String
+    end: String
+}
+
+type FhirContactPoint {
+    system: String
+    value: String
+}

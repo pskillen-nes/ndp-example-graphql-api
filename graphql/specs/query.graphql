@@ -1,0 +1,17 @@
+type Query {
+    # NDP Demographics searches
+    getPatientByID(id: ID!): FhirPatient
+    getPatientByCHI(chiNumber: String!): FhirPatient
+    matchPatients(demographics: DemographicsSearchInput!):[FhirPatient]
+
+    # MDDH
+    getMedicalDevicesByPatient(chiNumber: String!): [MedicalDevice]
+    searchMedicalDevices(udi: String): [MedicalDevice]
+
+    # DDerm
+    getDermatologyDocumentReferencesByChi(chiNumber: String!): [FhirDocumentReference]
+    getDermatologyEncountersByChi(chiNumber: String!): [FhirEncounter]
+
+    # NCDS
+    getImmunizationsByChi(chiNumber: String!): [FhirImmunization]
+}

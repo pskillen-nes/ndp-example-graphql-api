@@ -1,0 +1,11 @@
+{
+  "watch": [
+    "src",
+    "graphql/specs"
+  ],
+  "ext": "ts,graphql",
+  "ignore": [
+    "src/**/*.test.ts"
+  ],
+  "exec": "tsx ./src/app.ts"
+}

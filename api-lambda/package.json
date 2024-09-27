@@ -1,0 +1,33 @@
+{
+  "name": "ndp-unified-graphql-api",
+  "version": "1.0.0",
+  "description": "GraphQL API over multiple REST APIs using AWS Lambda",
+  "main": "dist/handler.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "nodemon",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.11.0",
+    "@aws-sdk/client-secrets-manager": "^3.658.1",
+    "@graphql-tools/load-files": "^7.0.0",
+    "axios": "^1.7.7",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.5",
+    "graphql": "^16.9.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/fhir": "^0.0.41",
+    "@types/graphql": "^14.5.0",
+    "@types/jest": "^29.5.13",
+    "@types/node": "^22.7.2",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.7",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  },
+  "license": "MIT"
+}
