@@ -1,9 +1,9 @@
+import ngrok from "@ngrok/ngrok";
 import {GetSecretValueCommand, SecretsManagerClient} from "@aws-sdk/client-secrets-manager";
 import {APIConfig, AWSSecretsManagerAPISecret} from "./ndp-cdr-apis-common/types";
-
-import config from "./config";
 import {getOAuthToken} from "./ndp-cdr-apis-common/auth/oauthClient";
-import MddhAPI from "./ndp-cdr-apis-common/services/MddhAPI";
+import config from "./config";
+
 
 export async function getSecretsManagerSecret(secretName: string): Promise<AWSSecretsManagerAPISecret | undefined> {
   console.debug(`Reading OpenEHR credentials from secret ${secretName}`);
@@ -45,3 +45,13 @@ export async function getApiAuthHeader(apiConfig: APIConfig): Promise<string | u
 
   return authHeader;
 }
+
+export async function initNgrok() {
+  const listener = await ngrok.forward({
+    addr: config.server.port,
+    authtoken_from_env: true,
+    domain: config.ngrok.domain
+  });
+
+  console.log(`Ingress established at: ${listener.url()}`);
+};

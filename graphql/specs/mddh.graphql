@@ -1,20 +1,74 @@
+"""
+Represents a medical device associated with a patient.
+"""
 type MedicalDevice {
-  deviceSerialNum: String
-  productDescription: String
-  lotOrBatchNum: String
-  mddClass: String
-  procedure: Procedure
-  operation: Operation
+    """
+    The serial number of the medical device.
+    """
+    deviceSerialNum: String
+
+    """
+    A description of the medical device product.
+    """
+    productDescription: String
+
+    """
+    The lot or batch number associated with the medical device.
+    """
+    lotOrBatchNum: String
+
+    """
+    The medical device's classification, typically indicating its risk class (e.g., Class I, II, III).
+    """
+    mddClass: String
+
+    """
+    The procedure associated with the medical device, including its code and description.
+    """
+    procedure: Procedure
+
+    """
+    The operation during which the medical device was used or implanted, including date and identifier.
+    """
+    operation: Operation
 }
 
+"""
+Represents a medical procedure associated with a medical device.
+"""
 type Procedure {
-  id: ID!
-  code: String
-  description: String
+    """
+    The unique identifier for the procedure.
+    """
+    id: ID!
+
+    """
+    A code representing the type of procedure.
+    """
+    code: String
+
+    """
+    A description of the procedure.
+    """
+    description: String
 }
 
+"""
+Represents a medical operation in which the medical device was involved.
+"""
 type Operation {
-  id: ID!
-  identifier: String
-  dateTime: String
+    """
+    The unique identifier for the operation.
+    """
+    id: ID!
+
+    """
+    An identifier for the operation.
+    """
+    identifier: String
+
+    """
+    The date and time of the operation in ISO 8601 format.
+    """
+    dateTime: String
 }

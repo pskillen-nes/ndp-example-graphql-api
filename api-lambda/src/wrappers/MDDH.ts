@@ -29,16 +29,39 @@ export async function initMddhAPI(): Promise<MddhAPI> {
   return api;
 }
 
+
+interface MedicalDevice {
+  deviceSerialNum: string | null;
+  productDescription: string | null;
+  lotOrBatchNum: string | null;
+  mddClass: string | null;
+  procedure: Procedure;
+  operation: Operation;
+}
+
+interface Procedure {
+  id: string | null;
+  code: string | null;
+  description: string | null;
+}
+
+interface Operation {
+  id: string | null;
+  identifier: string | null;
+  dateTime: string | null;
+}
+
+
 export class MddhWrapper extends AbstractServiceWrapper {
   constructor() {
     super('Medical Device Registry');
   }
 
-  getMedicalDevicesByPatient = async (_: any, args: { [k: string]: string }) => {
+  getMedicalDevicesByChi = async (_: any, args: { [k: string]: string }) => {
     const chi = args['chiNumber'];
 
 
-    let compositionsData: DeviceSearchResponseType;
+    let searchResponse: DeviceSearchResponseType;
     try {
       const patientResponse = await mddh.getEhrBySubject(chi);
       const patient = patientResponse.data as OpenEhrEHRBodyCanonical;
@@ -49,130 +72,87 @@ export class MddhWrapper extends AbstractServiceWrapper {
 
       // List all compositions for the patient's EHR
       const listCompositionsResponse = await mddh.listCompositionsForEhr(patient.ehr_id!.value);
-      compositionsData = listCompositionsResponse.data as DeviceSearchResponseType;
+      searchResponse = listCompositionsResponse.data as DeviceSearchResponseType;
     } catch (error) {
       return this.handleError(error as Error | string);
     }
 
 
-    // Get an array of compositions
-    const compositions = compositionsData.deviceRecords.map(dr => dr.composition);
-
     // Map the compositions to extract the devices
-    const devices = this.mapMedicalDevices(compositions);
+    const devices = this.mapMedicalDevices(searchResponse);
 
     return devices || [];
   };
 
-  // Function to map an array of compositions to devices
-  private mapMedicalDevices(compositions: any[]): any[] {
-    return compositions.flatMap((composition: any) => {
-      // Handle each composition and map devices
-      return this.mapCompositionToDevices(composition);
+  private mapMedicalDevices(openEhrResponse: any): MedicalDevice[] {
+    const deviceRecords = openEhrResponse.deviceRecords || [];
+    const medicalDevices: MedicalDevice[] = [];
+
+    // Loop through each device record (i.e., each composition)
+    deviceRecords.forEach((record: any) => {
+      const composition = record.composition;
+
+      // Loop through the content in the composition to find procedures
+      const procedures = composition.content.filter(
+        (content: any) => content.name.value === 'Procedure'
+      );
+      const operation = composition.content.find(
+        (content: any) => content.name.value === 'Operation'
+      );
+
+      procedures.forEach((procedure: any) => {
+        // Extract device details from the procedure description items
+        const deviceDetailsArray = procedure?.description?.items.filter(
+          (item: any) => item.name.value === 'Device Details'
+        );
+
+        // If device details exist, map each device
+        deviceDetailsArray.forEach((deviceDetails: any) => {
+          const productDescription = deviceDetails?.items?.find(
+            (item: any) => item.name.value === 'Product description'
+          )?.value?.value;
+          const deviceSerialNum = deviceDetails?.items?.find(
+            (item: any) => item.name.value === 'Device Serial number'
+          )?.value?.value;
+          const lotOrBatchNum = deviceDetails?.items?.find(
+            (item: any) => item.name.value === 'Device Lot or Batch number'
+          )?.value?.value;
+          const mddClass = deviceDetails?.items?.find(
+            (item: any) => item.name.value === 'Class'
+          )?.value?.value;
+
+          // Map the medical device object
+          const mappedDevice: MedicalDevice = {
+            deviceSerialNum: deviceSerialNum || null,
+            productDescription: productDescription || null,
+            lotOrBatchNum: lotOrBatchNum || null,
+            mddClass: mddClass || null,
+            procedure: {
+              id: procedure?.archetype_node_id || null,
+              code: procedure?.description?.items.find(
+                (item: any) => item.name.value === 'Procedure name'
+              )?.value?.defining_code?.code_string || null,
+              description: procedure?.description?.items.find(
+                (item: any) => item.name.value === 'Procedure name'
+              )?.value?.value || null,
+            },
+            operation: {
+              id: composition?.archetype_node_id || null,
+              identifier: composition?.protocol?.items.find(
+                (item: any) => item.name.value === 'Operation identifier'
+              )?.value?.id || null,
+              dateTime: composition?.time?.value || null,
+            },
+          };
+
+          // Add the mapped device to the results array
+          medicalDevices.push(mappedDevice);
+        });
+
+      });
     });
+
+    return medicalDevices;
   }
 
-  // Helper function to map a single composition to devices
-  private mapCompositionToDevices(composition: any): any[] {
-    // Check for `content` in composition and map through it
-    return composition.content?.flatMap((action: any) => {
-      if (action.name?.value === "Procedure") {
-        // Map procedures to extract device information
-        return this.mapProcedureToDevices(action);
-      }
-      return [];
-    }) || [];
-  }
-
-  // Helper function to map procedure data to devices
-  private mapProcedureToDevices(procedure: any): any[] {
-    // Find the "Device Details" cluster in the procedure description
-    return procedure.description?.items?.flatMap((item: any) => {
-      if (item.name?.value === "Device Details") {
-        return this.extractDeviceDetails(item);
-      }
-      return [];
-    }) || [];
-  }
-
-  // Helper function to extract device details from the "Device Details" cluster
-  private extractDeviceDetails(deviceCluster: any): any[] {
-    const device = {
-      productDescription: this.getItemValue(deviceCluster, "Product description"),
-      lotOrBatchNum: this.getItemValue(deviceCluster, "Device Lot or Batch number"),
-      deviceSerialNum: this.getItemValue(deviceCluster, "Device Serial number"),
-      udi: this.getItemValue(deviceCluster, "Unique device identifier (UDI)"),
-      mddClass: this.getItemValue(deviceCluster, "Class"),
-      anatomicalLocation: this.getItemValueFromCluster(deviceCluster, "Anatomical location", "Body site name")
-    };
-
-    return [device];
-  }
-
-  // Helper function to get value from an ELEMENT item
-  private getItemValue(cluster: any, itemName: string): string | null {
-    const item = cluster.items?.find((i: any) => i.name?.value === itemName);
-    return item?.value?.value || null;
-  }
-
-  // Helper function to get a value from a nested cluster
-  private getItemValueFromCluster(cluster: any, clusterName: string, itemName: string): string | null {
-    const subCluster = cluster.items?.find((i: any) => i.name?.value === clusterName);
-    if (subCluster?.items) {
-      return this.getItemValue(subCluster, itemName);
-    }
-    return null;
-  }
-
-  // // Function to map EHR data to medical devices
-  // private mapMedicalDevices(ehrData: any): any[] {
-  //   // Map through the content array, filtering for procedure actions
-  //   return ehrData.content?.flatMap((action: any) => {
-  //     if (action.name?.value === "Procedure") {
-  //       // Map procedures to extract device information
-  //       return this.mapProcedureToDevices(action);
-  //     }
-  //     return [];
-  //   }) || [];
-  // }
-  //
-  // // Helper function to map procedure data to devices
-  // private mapProcedureToDevices(procedure: any): any[] {
-  //   // Find the device cluster in the procedure description
-  //   return procedure.description?.items?.flatMap((item: any) => {
-  //     if (item.name?.value === "Device Details") {
-  //       // Map the device details and other metadata to the response structure
-  //       return {
-  //         productDescription: item.items?.find((i: any) => i.name?.value === "Product description")?.value?.value || null,
-  //         deviceSerialNum: item.items?.find((i: any) => i.name?.value === "Device Serial number")?.value?.value || null,
-  //         lotOrBatchNum: item.items?.find((i: any) => i.name?.value === "Device Lot or Batch number")?.value?.value || null,
-  //         udi: item.items?.find((i: any) => i.name?.value === "Unique device identifier (UDI)")?.value?.id || null,
-  //         mddClass: item.items?.find((i: any) => i.name?.value === "Class")?.value?.value || null,
-  //         anatomicalLocation: this.mapAnatomicalLocation(item.items),
-  //         procedure: {
-  //           name: procedure.description?.items?.find((i: any) => i.name?.value === "Procedure name")?.value?.value || null,
-  //           code: procedure.description?.items?.find((i: any) => i.name?.value === "Procedure name")?.value?.defining_code?.code_string || null,
-  //           procedureType: procedure.description?.items?.find((i: any) => i.name?.value === "Procedure type")?.value?.value || null
-  //         },
-  //         operation: {
-  //           id: procedure.protocol?.items?.find((i: any) => i.name?.value === "Operation identifier")?.value?.id || null,
-  //           dateTime: procedure.time?.value || null
-  //         }
-  //       };
-  //     }
-  //     return [];
-  //   }) || [];
-  // }
-
-  // // Helper function to map anatomical location data
-  // private mapAnatomicalLocation(items: any[]): any {
-  //   const anatomicalCluster = items?.find((i: any) => i.name?.value === "Anatomical location");
-  //   if (anatomicalCluster) {
-  //     return {
-  //       bodySite: anatomicalCluster.items?.find((i: any) => i.name?.value === "Body site name")?.value?.value || null,
-  //       laterality: anatomicalCluster.items?.find((i: any) => i.name?.value === "Laterality")?.value?.value || null,
-  //     };
-  //   }
-  //   return null;
-  // }
 }

@@ -1,10 +1,106 @@
+"""
+Input type for searching patients based on demographic details such as name, birth date, and address.
+"""
 input DemographicsSearchInput {
+    """
+    The patient's family name (last name) used for matching.
+    """
     familyName: String
+
+    """
+    The patient's given name (first name) used for matching.
+    """
     givenName: String
+
+    """
+    The patient's birth date in ISO 8601 format (YYYY-MM-DD), used for matching.
+    """
     birthDate: String
+
+    """
+    The patient's address details for matching, including postal code.
+    """
     address: DemographicsSearchAddressInput
 }
 
+"""
+Input type for specifying address details when searching for a patient by demographics.
+"""
 input DemographicsSearchAddressInput {
+    """
+    The postal code of the patient's address, used for matching.
+    """
     postalCode: String
+}
+
+
+input PatientInput {
+    """
+    The patient's official name, typically including given name, family name, etc.
+    """
+    name: [HumanNameInput!]!
+
+    """
+    The patient's gender. Common values: 'male', 'female', 'other', 'unknown'.
+    """
+    gender: String
+
+    """
+    The patient's date of birth (ISO 8601 format).
+    """
+    birthDate: String
+
+    """
+    A list of identifiers (e.g., medical record numbers) associated with the patient.
+    """
+    identifier: [IdentifierInput]
+
+    """
+    Contact information for the patient, such as email or phone number.
+    """
+    telecom: [ContactPointInput]
+}
+
+# HumanName input type
+input HumanNameInput {
+    """
+    Family name (last name) of the patient.
+    """
+    family: String!
+
+    """
+    Given names (first name, middle names) of the patient.
+    """
+    given: [String!]
+}
+
+# Identifier input type
+input IdentifierInput {
+    """
+    The system or namespace for the identifier (e.g., "https://hospital.com").
+    """
+    system: String
+
+    """
+    The value of the identifier (e.g., "12345").
+    """
+    value: String
+}
+
+# ContactPoint input type for telecom details like email or phone
+input ContactPointInput {
+    """
+    Type of contact (e.g., 'email', 'phone').
+    """
+    system: String!
+
+    """
+    The actual contact information (e.g., the phone number or email address).
+    """
+    value: String
+
+    """
+    Rank of the contact point in a list of contacts, with lower numbers having higher priority.
+    """
+    rank: Int
 }

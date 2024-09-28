@@ -1,17 +1,83 @@
+"""
+The root query type for retrieving data relating to a patient by CHI number.
+"""
 type Query {
     # NDP Demographics searches
+
+    """
+    Retrieves a patient's details by their internal system ID (FHIR Patient ID).
+    """
     getPatientByID(id: ID!): FhirPatient
+
+    """
+    Retrieves a patient's details by their CHI (Community Health Index) number.
+    """
     getPatientByCHI(chiNumber: String!): FhirPatient
-    matchPatients(demographics: DemographicsSearchInput!):[FhirPatient]
+
+    """
+    Finds matching patients based on demographics such as name, birth date, and address.
+    """
+    matchPatients(demographics: DemographicsSearchInput!): [FhirPatient]
 
     # MDDH
-    getMedicalDevicesByPatient(chiNumber: String!): [MedicalDevice]
+
+    """
+    Retrieves all medical devices associated with a patient using their CHI number.
+    The data comes from the Medical Device Data Hub (MDDH).
+    """
+    getMedicalDevicesByChi(chiNumber: String!): [MedicalDevice]
+
+    """
+    Searches for medical devices using a UDI (Unique Device Identifier).
+    The data comes from the Medical Device Data Hub (MDDH).
+    """
     searchMedicalDevices(udi: String): [MedicalDevice]
 
     # DDerm
+
+    """
+    Retrieves dermatology-related document references (e.g., medical photographs, records)
+    for a patient based on their CHI number.
+    The data comes from the Digital Dermatology (DDerm) system.
+    """
     getDermatologyDocumentReferencesByChi(chiNumber: String!): [FhirDocumentReference]
+
+    """
+    Retrieves dermatology-related encounters for a patient using their CHI number.
+    The data comes from the Digital Dermatology (DDerm) system.
+    """
     getDermatologyEncountersByChi(chiNumber: String!): [FhirEncounter]
 
     # NCDS
+
+    """
+    Retrieves a patient's immunization history based on their CHI number.
+    The data comes from the National Clinical Data Store (NCDS).
+    """
     getImmunizationsByChi(chiNumber: String!): [FhirImmunization]
+}
+
+"""
+Mutation operations for modifying patient data.
+"""
+type Mutation {
+    """
+    Adds a new patient to the system with the provided patient details.
+    """
+    addPatient(input: PatientInput!): FhirPatient
+
+    """
+    Deletes a patient from the system using their internal system ID.
+    """
+    deletePatient(id: ID!): FhirPatient
+}
+
+"""
+Subscription for receiving real-time updates when a patient's details are modified.
+"""
+type Subscription {
+    """
+    Subscribes to updates for a patient, notifying clients when the patient's details are changed.
+    """
+    patientUpdated(id: ID!): FhirPatient
 }

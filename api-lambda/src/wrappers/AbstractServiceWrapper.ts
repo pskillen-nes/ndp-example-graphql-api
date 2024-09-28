@@ -27,7 +27,7 @@ export abstract class AbstractServiceWrapper {
 
   protected handleError = (error: Error | string | undefined) => {
     console.error(error);
-    throw new GraphQLError('Unknown error', {
+    throw new GraphQLError('Unhandled error', {
       originalError: error as Error,
       extensions: {
         api: this.serviceName

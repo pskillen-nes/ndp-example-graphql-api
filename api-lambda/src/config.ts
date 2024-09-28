@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import {APIConfig} from "./ndp-cdr-apis-common/types";
+import {envVarIsTruthy} from "./ndp-cdr-apis-common/helpers";
 
 dotenv.config();
 
@@ -103,6 +104,11 @@ const ddermApiConfig: APIConfig = {
   }
 }
 
+const ngrokConfig = {
+  enabled: envVarIsTruthy(process.env.NGROK_ENABLED),
+  domain: process.env.NGROK_DOMAIN,
+}
+
 const config = {
   environment: environmentName,
   serviceName,
@@ -118,6 +124,10 @@ const config = {
     serverNodeName: process.env.OPENEHR_SERVER_NODE_NAME ?? 'integration-test.mddh.dss.ndp.scot',
   },
   mddhAPI: mddhApiConfig,
+  ngrok: ngrokConfig,
+  server: {
+    port: process.env.LISTEN_PORT ? parseInt(process.env.LISTEN_PORT) : 4000,
+  }
 }
 
 export default config;

@@ -8,6 +8,8 @@ import {NdpDemographicsWrapper} from "./wrappers/NdpDemographics";
 import {MddhWrapper} from "./wrappers/MDDH";
 import {NcdsWrapper} from "./wrappers/NCDS";
 import {DDermWrapper} from "./wrappers/DigiDerm";
+import config from "./config";
+import {initNgrok} from "./init-services";
 
 // Load the .graphql files from your `graphql/specs` folder
 const __filename = fileURLToPath(import.meta.url);
@@ -22,6 +24,8 @@ const dderm = new DDermWrapper();
 
 const formatError = (_: GraphQLFormattedError, err: unknown): GraphQLFormattedError => {
   if (err instanceof GraphQLError) {
+    const isNotFound = err.extensions?.code === 'NOT_FOUND';
+
     return {
       message: err.message,
       extensions: {
@@ -29,6 +33,10 @@ const formatError = (_: GraphQLFormattedError, err: unknown): GraphQLFormattedEr
         api: err.extensions?.api,
         identifiers: err.extensions?.identifiers,
         dataStoreName: err.extensions?.dataStoreName,
+        originalError: (!isNotFound && err.originalError) ? {
+          name: err.originalError.name,
+          message: err.originalError.message,
+        } : undefined,
       },
     };
   }
@@ -49,7 +57,7 @@ const resolvers = {
     getPatientByCHI: empi.getPatientByCHI,
 
     // MDDH
-    getMedicalDevicesByPatient: mddh.getMedicalDevicesByPatient,
+    getMedicalDevicesByChi: mddh.getMedicalDevicesByChi,
 
     // NCDS
     getImmunizationsByChi: ncds.getImmunizationsByChi,
@@ -67,7 +75,10 @@ const server = new ApolloServer({
 });
 
 const {url} = await startStandaloneServer(server, {
-  listen: {port: 4000},
+  listen: {port: config.server.port},
 });
+
+if (config.ngrok.enabled)
+  await initNgrok();
 
 console.log(`🚀  Server ready at: ${url}`);

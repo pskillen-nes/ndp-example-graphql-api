@@ -1,3 +1,6 @@
+"""
+Represents a FHIR Immunization resource, containing information about a patient's immunization history.
+"""
 type FhirImmunization {
     id: ID!
     identifier: [FhirIdentifier]
@@ -20,38 +23,62 @@ type FhirImmunization {
     extension: [FhirExtension]
 }
 
+"""
+Represents an identifier used in FHIR resources, such as medical record numbers.
+"""
 type FhirIdentifier {
     system: String
     value: String
 }
 
+"""
+Represents a coded concept in FHIR resources, such as the type or reason for an action.
+"""
 type FhirCodeableConcept {
     text: String
     coding: [FhirCoding]
 }
 
+"""
+Represents coding information in FHIR, such as a code, system, and display name.
+"""
 type FhirCoding {
     system: String
     code: String
     display: String
 }
 
+"""
+Represents a reference to another FHIR resource, such as a patient, practitioner, or organization.
+"""
 type FhirReference {
     reference: String
 }
 
+"""
+Represents a performer in a FHIR resource, typically a practitioner involved in an action.
+"""
 type FhirPerformer {
     actor: FhirReference
 }
 
+"""
+Represents a protocol applied in FHIR Immunization resources.
+"""
 type FhirProtocolApplied {
     targetDisease: [FhirCodeableConcept]
     doseNumberPositiveInt: Int
     seriesDosePositiveInt: Int
 }
 
+"""
+Represents a contained resource in a FHIR resource, which could be a Location, Organization, or Practitioner.
+"""
 union ContainedResource = FhirLocation | FhirOrganization | FhirPractitioner
 
+"""
+Represents a FHIR Location resource, which could be a facility or place where healthcare services are provided.
+"""
 type FhirLocation {
     id: ID!
     identifier: [FhirIdentifier]
@@ -61,6 +88,9 @@ type FhirLocation {
     managingOrganization: FhirReference
 }
 
+"""
+Represents a FHIR Organization resource, such as a hospital or clinic.
+"""
 type FhirOrganization {
     id: ID!
     identifier: [FhirIdentifier]
@@ -70,6 +100,9 @@ type FhirOrganization {
     partOf: FhirReference
 }
 
+"""
+Represents a FHIR Practitioner, such as a doctor or healthcare provider.
+"""
 type FhirPractitioner {
     id: ID!
     identifier: [FhirIdentifier]
@@ -77,6 +110,9 @@ type FhirPractitioner {
     telecom: [FhirContactPoint]
 }
 
+"""
+Represents a human name in FHIR resources, including family name, given names, and prefixes/suffixes.
+"""
 type FhirHumanName {
     family: String
     given: [String]
@@ -84,6 +120,9 @@ type FhirHumanName {
     suffix: [String]
 }
 
+"""
+Represents an address in FHIR resources, including postal code, city, country, etc.
+"""
 type FhirAddress {
     use: String
     text: String
@@ -93,11 +132,17 @@ type FhirAddress {
     country: String
 }
 
+"""
+Represents an extension in FHIR resources, used for custom data fields.
+"""
 type FhirExtension {
     url: String
     valueString: String
 }
 
+"""
+Represents a FHIR Patient resource, containing patient details such as name, birthdate, and managing organization.
+"""
 type FhirPatient {
     id: ID!
     identifier: [FhirIdentifier]
@@ -110,7 +155,9 @@ type FhirPatient {
     generalPractitioner: FhirOrganization
 }
 
-
+"""
+Represents a FHIR DocumentReference resource, which stores references to documents like medical images or notes.
+"""
 type FhirDocumentReference {
     id: ID!
     identifier: [FhirIdentifier]
@@ -125,20 +172,32 @@ type FhirDocumentReference {
     content: [FhirDocumentContent]
 }
 
+"""
+Represents the content of a FHIR DocumentReference, such as images or PDFs.
+"""
 type FhirDocumentContent {
     attachment: FhirAttachment
     profile: [FhirProfile]
 }
 
+"""
+Represents a profile in FHIR DocumentReference, containing metadata like image size.
+"""
 type FhirProfile {
     valueCoding: FhirCoding
 }
 
+"""
+Represents an attachment in FHIR DocumentReference, typically an image or document with a URL and content type.
+"""
 type FhirAttachment {
     url: String
     title: String
 }
 
+"""
+Represents a FHIR ClinicalImpression resource, which stores clinical assessments and evaluations.
+"""
 type FhirClinicalImpression {
     id: ID!
     patientIdentifier: String
@@ -146,10 +205,16 @@ type FhirClinicalImpression {
     notes: String
 }
 
+"""
+Represents a participant in a FHIR resource, typically a practitioner involved in an encounter.
+"""
 type FhirParticipant {
     actor: FhirReference
 }
 
+"""
+Represents a FHIR Encounter resource, which logs patient encounters with healthcare providers.
+"""
 type FhirEncounter {
     id: ID!
     identifier: [FhirIdentifier]
@@ -162,15 +227,24 @@ type FhirEncounter {
     reason: [FhirEncounterReason]
 }
 
+"""
+Represents a reason for a FHIR Encounter, typically a medical condition or procedure.
+"""
 type FhirEncounterReason {
     concept: FhirCodeableConcept
 }
 
+"""
+Represents a period of time in FHIR, typically used for recording the start and end of an encounter.
+"""
 type FhirPeriod {
     start: String
     end: String
 }
 
+"""
+Represents a contact point in FHIR resources, such as an email or phone number.
+"""
 type FhirContactPoint {
     system: String
     value: String
