@@ -53,6 +53,9 @@ Represents a reference to another FHIR resource, such as a patient, practitioner
 """
 type FhirReference {
     reference: String
+    identifier: FhirIdentifier
+    type: String
+    display: String
 }
 
 """
@@ -146,13 +149,13 @@ Represents a FHIR Patient resource, containing patient details such as name, bir
 type FhirPatient {
     id: ID!
     identifier: [FhirIdentifier]
-    name: FhirHumanName
+    name: [FhirHumanName]
     birthDate: String
     gender: String
-    managingOrganization: FhirOrganization
+    managingOrganization: FhirReference
     address: [FhirAddress]
     deceased: Boolean
-    generalPractitioner: FhirOrganization
+    generalPractitioner: [FhirReference]
 }
 
 """

@@ -30,7 +30,7 @@ export async function initMddhAPI(): Promise<MddhAPI> {
 }
 
 
-interface MedicalDevice {
+export interface MedicalDevice {
   deviceSerialNum: string | null;
   productDescription: string | null;
   lotOrBatchNum: string | null;
@@ -39,13 +39,13 @@ interface MedicalDevice {
   operation: Operation;
 }
 
-interface Procedure {
+export interface Procedure {
   id: string | null;
   code: string | null;
   description: string | null;
 }
 
-interface Operation {
+export interface Operation {
   id: string | null;
   identifier: string | null;
   dateTime: string | null;

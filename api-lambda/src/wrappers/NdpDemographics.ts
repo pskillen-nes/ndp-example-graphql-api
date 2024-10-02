@@ -32,12 +32,16 @@ async function initNdpDemographicsApi(): Promise<NdpDemographicsAPI> {
   return api;
 }
 
+export type EmpiPatient = {
+  deceased: boolean,
+} & Patient;
+
 export class NdpDemographicsWrapper extends AbstractServiceWrapper {
   constructor() {
     super('NDP Demographics Service');
   }
 
-  getPatientByCHI = async (_: any, args: { [k: string]: string }) => {
+  getPatientByCHI = async (_: any, args: { [k: string]: string }): Promise<EmpiPatient> => {
     const chi = args['chiNumber'];
 
     let patientData: Patient;
@@ -56,37 +60,40 @@ export class NdpDemographicsWrapper extends AbstractServiceWrapper {
     }
 
     // Map the OpenAPI response fields to GraphQL Patient type
-    return {
-      id: patientData.id,  // This might be nullable, depending on the response
-      chiNumber: patientData.identifier?.find((id: Identifier) => id.system?.includes('chinumber'))?.value || null,
-      name: {
-        family: patientData.name?.[0]?.family || '',
-        given: patientData.name?.[0]?.given || []
-      },
-      birthDate: patientData.birthDate || null,
-      gender: patientData.gender || null,
-      managingOrganization: {
+    const response: EmpiPatient = {
+      resourceType: "Patient",
+      id: patientData.id,
+      name: patientData.name?.map(name => ({
+        given: name.given,
+        family: name.family,
+        use: name.use,
+        text: name.text,
+      })) || [],
+      birthDate: patientData.birthDate,
+      gender: patientData.gender,
+      managingOrganization: patientData.managingOrganization ? {
         identifier: {
-          system: patientData.managingOrganization?.identifier?.system || null,
-          value: patientData.managingOrganization?.identifier?.value || null
+          system: patientData.managingOrganization.identifier?.system,
+          value: patientData.managingOrganization.identifier?.value
         },
-        display: patientData.managingOrganization?.display || ''
-      },
+        display: patientData.managingOrganization.display || ''
+      } : undefined,
       address: patientData.address?.map((addr: Address) => ({
-        use: addr.use || '',
-        text: addr.text || '',
-        postalCode: addr.postalCode || '',
+        use: addr.use,
+        text: addr.text,
+        postalCode: addr.postalCode,
         line: addr.line || []
       })) || [],
       deceased: patientData.deceasedBoolean || false,
-      generalPractitioner: {
-        identifier: {
-          system: patientData.generalPractitioner?.[0]?.identifier?.system || null,
-          value: patientData.generalPractitioner?.[0]?.identifier?.value || null
-        },
-        display: patientData.generalPractitioner?.[0]?.identifier?.value || null
-      }
+      generalPractitioner: patientData.generalPractitioner?.map(gp => ({
+        identifier: gp.identifier ? {
+          system: gp.identifier.system,
+          value: gp.identifier.value
+        } : undefined,
+        type: gp.type,
+      })) || [],
     };
+    return response;
   };
 
 }

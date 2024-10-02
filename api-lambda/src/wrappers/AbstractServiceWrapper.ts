@@ -9,7 +9,7 @@ export abstract class AbstractServiceWrapper {
     this.serviceName = serviceName;
   }
 
-  protected handleNotFoundError = (message: string, identifiers: KeyValuePairs): NotFoundResponse => {
+  protected handleNotFoundError = (message: string, identifiers: KeyValuePairs): never => {
     // const err: NotFoundResponse = {
     //   dataStoreName: this.serviceName,
     //   identifiers,
