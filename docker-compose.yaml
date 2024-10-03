@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "8080:80"  # Nginx will listen on port 8080
+    volumes:
+      - ./development/docker/nginx.conf:/etc/nginx/nginx.conf:ro  # Mount custom Nginx configuration
+    networks:
+      - proxy_network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    depends_on:
+      - nginx  # Ngrok will wait for Nginx to be ready
+    command: http nginx:80  # Expose Nginx on port 80 to the internet
+    env_file:
+      - ./api-lambda/.env  # Specify the location of the .env file
+    #    environment:
+    #      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}  # Read from .env file
+    #      - NGROK_REGION=${NGROK_REGION}        # Optional: specify region from .env
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    driver: bridge
