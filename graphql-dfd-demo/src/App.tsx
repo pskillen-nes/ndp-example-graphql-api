@@ -1,4 +1,4 @@
-import React, {ReactNode, useEffect, useState} from "react"; // Import Bootstrap CSS
+import React, {ReactNode, useState} from "react"; // Import Bootstrap CSS
 import {Alert, Badge, Button, Container, Form, InputGroup, Tab, Tabs} from 'react-bootstrap';
 import {useLocalStorage} from 'usehooks-ts';
 import {ApolloError, gql, useQuery} from '@apollo/client';
@@ -292,97 +292,110 @@ function ImmunizationsDisplay(props: { immunizations?: Immunization[] }) {
 }
 
 function DataAvailablePill(props: { data?: object, children: ReactNode }) {
-  return <Badge pill bg={props.data ? 'success' : 'danger'} className="m-1">
+  const notFound = props.data == null;
+  const recordsAvailable = props.data && (!Array.isArray(props.data) || props.data.length > 0);
+
+  const color = notFound
+    ? 'danger'
+    : !recordsAvailable
+      ? 'warning'
+      : 'success';
+
+  return <Badge pill bg={color} className="m-1">
     {props.children}
   </Badge>;
 }
 
-function ErrorHandler(props: { error: ApolloError }) {
+function ErrorHandler(props: { error: ApolloError, children: ReactNode }) {
   const {error} = props;
 
   return (
-    <Alert variant="danger" style={{textAlign: 'left'}}>
-      {error.graphQLErrors && error.graphQLErrors.length > 0 && (
-        <div>
-          <h5>GraphQL Errors</h5>
-          {error.graphQLErrors.map((graphQLError, index) => (
-            <React.Fragment key={index}>
-              <div><strong>Message:</strong> {graphQLError.message}</div>
-              {graphQLError.locations && <div>(
-                <span>
+    <>
+      <Alert variant="danger" style={{textAlign: 'left'}}>
+        {error.graphQLErrors && error.graphQLErrors.length > 0 && (
+          <div>
+            <h5>GraphQL Errors</h5>
+            {error.graphQLErrors.map((graphQLError, index) => (
+              <React.Fragment key={index}>
+                <div><strong>Message:</strong> {graphQLError.message}</div>
+                {graphQLError.locations && <div>(
+                  <span>
                     <strong>Locations:</strong>{' '}
-                  {graphQLError.locations.map(
-                    (location) => `Line ${location.line}, Column ${location.column}`
-                  ).join(', ')}
+                    {graphQLError.locations.map(
+                      (location) => `Line ${location.line}, Column ${location.column}`
+                    ).join(', ')}
                       </span>
-                )</div>}
-              {graphQLError.path && <div>(
-                <span>
+                  )</div>}
+                {graphQLError.path && <div>(
+                  <span>
                     <strong>Path:</strong> {graphQLError.path.join(' > ')}
                       </span>
-                )</div>}
-              <strong>Extensions:</strong> {JSON.stringify(graphQLError.extensions)}
-            </React.Fragment>
-          ))}
-        </div>
-      )}
-
-      {error.protocolErrors && error.protocolErrors.length > 0 && (
-        <div>
-          <h5>Protocol Errors</h5>
-          <ul>
-            {error.protocolErrors.map((protocolError, index) => (
-              <li key={index}>
-                <strong>Message:</strong> {protocolError.message}
-                <strong>Details:</strong> {JSON.stringify(protocolError)}
-              </li>
+                  )</div>}
+                <strong>Extensions:</strong> {JSON.stringify(graphQLError.extensions)}
+              </React.Fragment>
             ))}
-          </ul>
-        </div>
-      )}
-
-      {error.clientErrors && error.clientErrors.length > 0 && (
-        <div>
-          <h5>Client Errors</h5>
-          <ul>
-            {error.clientErrors.map((clientError, index) => (
-              <li key={index}>
-                <strong>Message:</strong> {clientError.message}
-                <strong>Details:</strong> {JSON.stringify(clientError)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {error.networkError && (
-        <div>
-          <h5>Network Error</h5>
-          <p>
-            <strong>Message:</strong> {error.networkError.message}
-          </p>
-          {error.networkError.name && (
-            <p>
-              <strong>Error Name:</strong> {error.networkError.name}
-            </p>
-          )}
-          {error.networkError.stack && (
-            <p>
-              <strong>Stack Trace:</strong> {error.networkError.stack}
-            </p>
-          )}
-        </div>
-      )}
-
-      {!error.graphQLErrors &&
-        !error.protocolErrors &&
-        !error.clientErrors &&
-        !error.networkError && (
-          <p style={{textAlign: 'left'}}>
-            <strong>Unknown Error:</strong> {error.message}
-          </p>
+          </div>
         )}
-    </Alert>
+
+        {error.protocolErrors && error.protocolErrors.length > 0 && (
+          <div>
+            <h5>Protocol Errors</h5>
+            <ul>
+              {error.protocolErrors.map((protocolError, index) => (
+                <li key={index}>
+                  <strong>Message:</strong> {protocolError.message}
+                  <strong>Details:</strong> {JSON.stringify(protocolError)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {error.clientErrors && error.clientErrors.length > 0 && (
+          <div>
+            <h5>Client Errors</h5>
+            <ul>
+              {error.clientErrors.map((clientError, index) => (
+                <li key={index}>
+                  <strong>Message:</strong> {clientError.message}
+                  <strong>Details:</strong> {JSON.stringify(clientError)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {error.networkError && (
+          <div>
+            <h5>Network Error</h5>
+            <p>
+              <strong>Message:</strong> {error.networkError.message}
+            </p>
+            {error.networkError.name && (
+              <p>
+                <strong>Error Name:</strong> {error.networkError.name}
+              </p>
+            )}
+            {error.networkError.stack && (
+              <p>
+                <strong>Stack Trace:</strong> {error.networkError.stack}
+              </p>
+            )}
+          </div>
+        )}
+
+        {!error.graphQLErrors &&
+          !error.protocolErrors &&
+          !error.clientErrors &&
+          !error.networkError && (
+            <p style={{textAlign: 'left'}}>
+              <strong>Unknown Error:</strong> {error.message}
+            </p>
+          )}
+
+        {props.children}
+      </Alert>
+    </>
   );
 }
 
@@ -395,6 +408,7 @@ function App() {
 
   const [chiNumber, setChiNumber] = useLocalStorage<string>('SELECTED_CHI', '');
   const [inputChiNumber, setInputChiNumber] = useState<string>(chiNumber);
+  const [showErrors, setShowErrors] = useState<boolean>(false);
 
   const handleSearch = () => {
     // You can handle the search logic here, e.g., make a GraphQL query using the chiNumber
@@ -412,12 +426,6 @@ function App() {
     errorPolicy: "all",
     variables: {chiNumber}
   });
-
-  useEffect(() => {
-    if (error) console.warn(error);
-
-  }, [error]);
-
 
   function PatientInfoTabContainer(props: {
     patient: Patient,
@@ -506,7 +514,10 @@ function App() {
       </>}
 
       {error && <>
-        <ErrorHandler error={error}/>
+        {showErrors || <a href="#" onClick={() => setShowErrors(true)}>Show errors</a>}
+        {showErrors && <ErrorHandler error={error}>
+          <a href="#" onClick={() => setShowErrors(false)}>Hide errors</a>
+        </ErrorHandler>}
       </>}
     </Container>
   );
