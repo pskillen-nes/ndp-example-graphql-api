@@ -1,7 +1,7 @@
-import React, {useState} from "react"; // Import Bootstrap CSS
-import {Alert, Button, Container, Form, InputGroup, Tab, Tabs} from 'react-bootstrap';
+import React, {ReactNode, useEffect, useState} from "react"; // Import Bootstrap CSS
+import {Alert, Badge, Button, Container, Form, InputGroup, Tab, Tabs} from 'react-bootstrap';
 import {useLocalStorage} from 'usehooks-ts';
-import {gql, useQuery} from '@apollo/client';
+import {ApolloError, gql, useQuery} from '@apollo/client';
 import {Immunization, Patient} from "fhir/r4";
 import {CodeableConcept, Encounter as EncounterR5, EncounterReason, Organization} from "fhir/r5";
 
@@ -134,26 +134,26 @@ function PatientDemographicsDisplay(props: { patient?: Patient }) {
 
   return <>
     <h1>Patient Demographics</h1>
-    {name && name.map(n => {
-      return <p>
-        <strong>Name:</strong>{n.prefix} {n.family}, {n.given?.join(' ')} {n.suffix}{n.use && ` (${n.use})`}
+    {name && name.map((hn, n) => {
+      return <p key={`name-${n}`}>
+        <strong>Name:</strong>{hn.prefix} {hn.family}, {hn.given?.join(' ')} {hn.suffix}{hn.use && ` (${hn.use})`}
       </p>
     })}
     <p><strong>Birth Date:</strong> {birthDate}</p>
     <p><strong>Gender:</strong> {gender}</p>
 
     <h2>Address</h2>
-    {address?.map(addr => {
+    {address?.map((addr, n) => {
         const parts = [addr.line, addr.city, addr.postalCode, addr.country]
           .flat()
           .filter(p => p != null && p.length > 0);
-        return <p>{parts.join(', ')}</p>
+        return <p key={`addr-${n}`}>{parts.join(', ')}</p>
       }
     )}
 
     <h2>General Practitioner</h2>
     {(generalPractitioner && generalPractitioner.length > 0)
-      ? generalPractitioner.map(gp => <p>{gp.identifier?.value}</p>)
+      ? generalPractitioner.map((gp, n) => <p key={`gp-${n}`}>{gp.identifier?.value}</p>)
       : <p>No GP assigned</p>}
   </>;
 }
@@ -271,8 +271,11 @@ function ImmunizationsDisplay(props: { immunizations?: Immunization[] }) {
             <h5>Immunization {index + 1}</h5>
             <p><strong>Status:</strong> {immunization.status}</p>
             <p><strong>Vaccine:</strong> {immunization.vaccineCode.coding![0].display}</p>
-            <p><strong>Occurrence Date:</strong> {immunization.occurrenceDateTime && new Date(immunization.occurrenceDateTime).toLocaleString()}</p>
-            <p><strong>Recorded Date:</strong> {immunization.recorded && new Date(immunization.recorded).toLocaleString()}</p>
+            <p><strong>Occurrence
+              Date:</strong> {immunization.occurrenceDateTime && new Date(immunization.occurrenceDateTime).toLocaleString()}
+            </p>
+            <p><strong>Recorded
+              Date:</strong> {immunization.recorded && new Date(immunization.recorded).toLocaleString()}</p>
             <p><strong>Lot Number:</strong> {immunization.lotNumber}</p>
             <p><strong>Site:</strong> {immunization.site?.coding![0].display}</p>
             <p><strong>Route:</strong> {immunization.route?.coding![0].display}</p>
@@ -288,7 +291,105 @@ function ImmunizationsDisplay(props: { immunizations?: Immunization[] }) {
   );
 }
 
+function DataAvailablePill(props: { data?: object, children: ReactNode }) {
+  return <Badge pill bg={props.data ? 'success' : 'danger'} className="m-1">
+    {props.children}
+  </Badge>;
+}
+
+function ErrorHandler(props: { error: ApolloError }) {
+  const {error} = props;
+
+  return (
+    <Alert variant="danger" style={{textAlign: 'left'}}>
+      {error.graphQLErrors && error.graphQLErrors.length > 0 && (
+        <div>
+          <h5>GraphQL Errors</h5>
+          {error.graphQLErrors.map((graphQLError, index) => (
+            <React.Fragment key={index}>
+              <div><strong>Message:</strong> {graphQLError.message}</div>
+              {graphQLError.locations && <div>(
+                <span>
+                    <strong>Locations:</strong>{' '}
+                  {graphQLError.locations.map(
+                    (location) => `Line ${location.line}, Column ${location.column}`
+                  ).join(', ')}
+                      </span>
+                )</div>}
+              {graphQLError.path && <div>(
+                <span>
+                    <strong>Path:</strong> {graphQLError.path.join(' > ')}
+                      </span>
+                )</div>}
+              <strong>Extensions:</strong> {JSON.stringify(graphQLError.extensions)}
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
+      {error.protocolErrors && error.protocolErrors.length > 0 && (
+        <div>
+          <h5>Protocol Errors</h5>
+          <ul>
+            {error.protocolErrors.map((protocolError, index) => (
+              <li key={index}>
+                <strong>Message:</strong> {protocolError.message}
+                <strong>Details:</strong> {JSON.stringify(protocolError)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {error.clientErrors && error.clientErrors.length > 0 && (
+        <div>
+          <h5>Client Errors</h5>
+          <ul>
+            {error.clientErrors.map((clientError, index) => (
+              <li key={index}>
+                <strong>Message:</strong> {clientError.message}
+                <strong>Details:</strong> {JSON.stringify(clientError)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {error.networkError && (
+        <div>
+          <h5>Network Error</h5>
+          <p>
+            <strong>Message:</strong> {error.networkError.message}
+          </p>
+          {error.networkError.name && (
+            <p>
+              <strong>Error Name:</strong> {error.networkError.name}
+            </p>
+          )}
+          {error.networkError.stack && (
+            <p>
+              <strong>Stack Trace:</strong> {error.networkError.stack}
+            </p>
+          )}
+        </div>
+      )}
+
+      {!error.graphQLErrors &&
+        !error.protocolErrors &&
+        !error.clientErrors &&
+        !error.networkError && (
+          <p style={{textAlign: 'left'}}>
+            <strong>Unknown Error:</strong> {error.message}
+          </p>
+        )}
+    </Alert>
+  );
+}
+
+
 function App() {
+
+  const handyPatients = ['6663332221', '0123456789', '1212670841'];
 
   const [tabKey, setTabKey] = useState<string>('tabDemographics');
 
@@ -311,6 +412,12 @@ function App() {
     errorPolicy: "all",
     variables: {chiNumber}
   });
+
+  useEffect(() => {
+    if (error) console.warn(error);
+
+  }, [error]);
+
 
   function PatientInfoTabContainer(props: {
     patient: Patient,
@@ -365,17 +472,42 @@ function App() {
             Search
           </Button>
         </InputGroup>
+
+        <p>Handy patients:
+          {handyPatients.map((chi, n) => <a
+            href="#"
+            key={`handy-${n}`}
+            className="m-1"
+            onClick={() => {
+              setChiNumber(chi);
+              setInputChiNumber(chi)
+            }}
+          >{chi}</a>)}
+        </p>
       </Form>
 
+      <hr/>
+
       {loading && <p>Loading...</p>}
-      {error && <p>Error: {error.message}</p>}
       {!loading && !error && !data && <p>No data found!</p>}
 
-      {data && <PatientInfoTabContainer patient={data.getPatientByCHI}
-                                        medicalDevices={data.getMedicalDevicesByChi}
-                                        dermatologyEncounters={data.getDermatologyEncountersByChi}
-                                        immunizations={data.getImmunizationsByChi}
-      />}
+      {data && <>
+        <div className="mb-3">
+          <DataAvailablePill data={data.getPatientByCHI}>Demographics</DataAvailablePill>
+          <DataAvailablePill data={data.getMedicalDevicesByChi}>MDDH</DataAvailablePill>
+          <DataAvailablePill data={data.getDermatologyEncountersByChi}>Dermatology</DataAvailablePill>
+          <DataAvailablePill data={data.getImmunizationsByChi}>Vaccinations</DataAvailablePill>
+        </div>
+        <PatientInfoTabContainer patient={data.getPatientByCHI}
+                                 medicalDevices={data.getMedicalDevicesByChi}
+                                 dermatologyEncounters={data.getDermatologyEncountersByChi}
+                                 immunizations={data.getImmunizationsByChi}
+        />
+      </>}
+
+      {error && <>
+        <ErrorHandler error={error}/>
+      </>}
     </Container>
   );
 }
